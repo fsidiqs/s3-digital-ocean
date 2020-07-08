@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node server.js"
+    "start": "yarn install && node index.js"
   },
   "dependencies": {
     "aws-sdk": "^2.711.0",
