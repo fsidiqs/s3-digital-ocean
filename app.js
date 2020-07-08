@@ -1,6 +1,5 @@
 const express = require('express');
-const router = express.Router();
-const path = require('path');
+const cors = require('cors');
 // const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 require('dotenv').config();
@@ -12,7 +11,8 @@ const AWS = require('aws-sdk');
 const app = express();
 
 app.use(logger('dev'));
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(cors());
 app.use(express.urlencoded({ extended: false }));
 // app.use(cookieParser());
 // app.use(express.static(path.join(__dirname, 'public')));
@@ -26,14 +26,18 @@ const s3 = new AWS.S3({
 })
 
 app.get('/', (req, res, next) => {
-    s3.listBuckets({}, function (err, data) {
-        if (err) console.log(err, err.stack);
-        else {
-            data['Buckets'].forEach(function (space) {
-                console.log(space['Name']);
-            })
-        };
-    })
+    console.log('asd')
+    return 1;
+})
+
+app.post('/vendors', (req, res, next) => {
+    // console.log(req.body);
+    // req.body.data.images.forEach(image => { console.log(image) })
+    res.json(req.body.data.images)
+    //   const params = {
+    //       Bucket: "files-distrodakwah",
+    //       Key: ``
+    //   }
 });
 // app.use('/users', usersRouter);
 
