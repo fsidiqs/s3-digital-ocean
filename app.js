@@ -5,13 +5,14 @@ const logger = require('morgan');
 require('dotenv').config();
 //aws-sdk
 const AWS = require('aws-sdk');
-
-
-
+const multer = require('multer');
+const multerS3 = require('multer-s3');
+const path = require('path')
 const app = express();
 
+
 app.use(logger('dev'));
-app.use(express.json({ limit: '50mb' }));
+app.use(express.json());
 app.use(cors());
 app.use(express.urlencoded({ extended: false }));
 // app.use(cookieParser());
@@ -25,19 +26,70 @@ const s3 = new AWS.S3({
     secretAccessKey: process.env.DO_SPACE_SECRET_ACCESS_KEY
 })
 
+function checkFileType(file, cb) {
+    // Allowed ext
+    const filetypes = /jpeg|jpg|png|gif/;
+    // Check ext
+    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+    // Check mime
+    const mimetype = filetypes.test(file.mimetype);
+    if (mimetype && extname) {
+        return cb(null, true);
+    } else {
+        cb('Error: Images Only!');
+    }
+}
+
+
+const multipleImgUpload = multer({
+    storage: multerS3({
+        s3,
+        bucket: 'files-distrodakwah',
+        acl: 'public-read',
+        key: (req, file, cb) => {
+            cb(null, path.basename(file.originalname))
+        },
+        contentType: multerS3.AUTO_CONTENT_TYPE
+    }),
+    limits: {
+        fileSize: 2000000
+    },
+    fileFilter: (req, file, cb) => {
+        checkFileType(file, cb);
+    }
+}).array('galleryImage', (req, file, cb) => {
+    countTotalImages(file,cb);
+});
+
 app.get('/', (req, res, next) => {
     console.log('asd')
     return 1;
 })
 
 app.post('/vendors', (req, res, next) => {
-    // console.log(req.body);
-    // req.body.data.images.forEach(image => { console.log(image) })
-    res.json(req.body.data.images)
-    //   const params = {
-    //       Bucket: "files-distrodakwah",
-    //       Key: ``
-    //   }
+    multipleImgUpload(req, res, (error) => {
+        if (error) {
+            res.json({ error: error });
+        } else {
+            if (req.files === undefined) {
+                res.json('Error: No file selected');
+            } else {
+                let fileArray = req.files,
+                    fileLocation;
+                const galleryImgLocationArray = [];
+                for (let i = 0; i < fileArray.length; i++) {
+                    fileLocation = fileArray[i].location;
+                    
+                    galleryImgLocationArray.push(fileLocation)
+                }
+                // Save the file name into database
+                res.json({
+                    filesArray: fileArray,
+                    locationArray: galleryImgLocationArray
+                });
+            }
+        }
+    })
 });
 // app.use('/users', usersRouter);
 
