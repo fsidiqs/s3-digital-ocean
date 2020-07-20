@@ -57,9 +57,7 @@ const multipleImgUpload = multer({
     fileFilter: (req, file, cb) => {
         checkFileType(file, cb);
     }
-}).array('galleryImage', (req, file, cb) => {
-    countTotalImages(file,cb);
-});
+}).array('galleryImage');
 
 app.get('/', (req, res, next) => {
     console.log('asd')
